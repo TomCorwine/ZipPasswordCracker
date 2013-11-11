@@ -28,7 +28,7 @@ def __extractFile(zipFile, password):
 	except:
 		return None
 
-def __generatePassword(characterSet, minLength, maxlength):
+def __generatePasswords(characterSet, minLength, maxlength):
     return (''.join(candidate)
         for candidate in itertools.chain.from_iterable(itertools.product(characterSet, repeat=i)
         for i in range(minLength, maxlength + 1)))
@@ -116,7 +116,8 @@ def main():
 		password = __checkPasswords(dictionary, zipFile)
 	if charactersSet is not None and password is None:
 		print 'Trying brute-force...'
-		password = __checkPasswords(__generatePassword(charactersSet, minLength, maxLength), zipFile)
+		passwords = __generatePasswords(charactersSet, minLength, maxLength)
+		password = __checkPasswords(passwords, zipFile)
 	if password is None:
 		__output('Sorry, not able to crack file. Try increasing the maxLength count.\n')
 	else:
