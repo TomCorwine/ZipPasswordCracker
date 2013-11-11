@@ -12,6 +12,15 @@ import itertools
 import sys
 import os
 
+def __exit(string):
+	global parser
+	print string + '\n' + parser.print_help()
+	exit(1)
+
+def __output(string):
+	sys.stdout.write('\r\x1b[K' + string)
+	sys.stdout.flush()
+
 def __extractFile(zipFile, password):
 	try:
 		zipFile.extractall(pwd=password)
@@ -31,8 +40,7 @@ def __checkPasswords(passwordList, zipFile):
 		for password in passwordList:
 			global quiet
 			if quiet is False:
-				sys.stdout.write('\r\x1b[K' + password)
-				sys.stdout.flush()
+				__output(password)
 			thread = pool.apply_async(__extractFile, (zipFile, password))		
 			result = thread.get()
 			if result is not None:
@@ -42,6 +50,7 @@ def __checkPasswords(passwordList, zipFile):
 	return None
 
 def main():
+	global parser
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-f', '--file', dest='zipFile', metavar='<filename>', required=True, type=str,
 		help='path to zip file to attack')
@@ -79,9 +88,8 @@ def main():
 	charactersSet = args.charactersSet
 
 	if maxLength < minLength:
-		print 'maxLength can not be lower than minLength.'
-		print parser.print_help()
-		exit(1)
+		__exit('maxLength can not be lower than minLength.')
+
 	if args.dictionaryFile is not None:
 		file = open(args.dictionaryFile, 'r')
 		dictionary = []
@@ -89,6 +97,7 @@ def main():
 			dictionary.append(line.strip('\n\r'))
 
 	if charactersSet is None: # if character set was supplied on command line, skip this
+		charactersSet = ''
 		if noLowerCase is False:
 			charactersSet = charactersSet + string.ascii_lowercase
 		if noUpperCase is False:
@@ -99,23 +108,19 @@ def main():
 			charactersSet = charactersSet + string.punctuation
 
 	if dictionary is None and charactersSet is None:
-		print 'Nothing to do as no dictionary was specified and all brute-forcing options are disabled.'
-		exit(1)
+		__exit('Nothing to do as no dictionary was specified and all brute-forcing options are disabled.')
 
 	password = None
 	if dictionary is not None:
 		print 'Trying dictionary...'
 		password = __checkPasswords(dictionary, zipFile)
-	if len(charactersSet):
-		if password is None:
-			print 'Trying brute-force...'
-			password = __checkPasswords(__generatePassword(charactersSet, minLength, maxLength), zipFile)
+	if charactersSet is not None and password is None:
+		print 'Trying brute-force...'
+		password = __checkPasswords(__generatePassword(charactersSet, minLength, maxLength), zipFile)
 	if password is None:
-		sys.stdout.write('\r\x1b[KSorry, not able to crack file. Try increasing the maxLength count.\n')
-		sys.stdout.flush()
+		__output('Sorry, not able to crack file. Try increasing the maxLength count.\n')
 	else:
-		sys.stdout.write('\r\x1b[K[+] Found password: ' + password + '\n')
-		sys.stdout.flush()
+		__output('[+] Found password: ' + password + '\n')
 	exit(0)
 
 if '__main__' == __name__:
