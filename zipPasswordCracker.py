@@ -36,9 +36,9 @@ def __generatePasswords(characterSet, minLength, maxlength):
 def __checkPasswords(passwordList, zipFile):
 	pool = ThreadPool(processes=16)
 	stop = False
+	global quiet
 	while stop is False:
 		for password in passwordList:
-			global quiet
 			if quiet is False:
 				__output(password)
 			thread = pool.apply_async(__extractFile, (zipFile, password))		
